@@ -29,6 +29,13 @@ int left[3] = {14, 15, 16};
 //fullString allows rainbow animations to cycle in order based on cube sides
 int fullString[17] = {0, 1, 2, 3, 4, 5, 12, 13, 6, 7, 8, 9, 10, 11, 14, 15, 16};
 
+//Color arrays for sides
+int topRGB[3];
+int backRGB[3];
+int frontRGB[3];
+int rightRGB[3];
+int leftRGB[3];
+
 // EEPROM Memory locations
 int EEPROMstatusLoc = 0; // 1 byte
 int frontColorLoc = 1; //3 bytes
@@ -91,6 +98,7 @@ void setup(void)
   BTLEserial.begin();
   
   strip.begin(); //Begin Neopixels
+  setColorsFromEEPROM();
   strip.show();  //Initialize all pixels to 'off'
 }
 
@@ -250,12 +258,11 @@ void readBLEnameFromEEPROM(){
   }
 }
 
-///////TO DO//////////////
+///////TO-DO: Finish this function
 void writeBLEnameToEEPROM(){
   //Write BLE name stored in variable to EEPROM
   
 }
-
 
 //Check if passed character is valid for BLE name
 int checkValidChar(char checkChar){
@@ -268,6 +275,19 @@ int checkValidChar(char checkChar){
     }
     return returnVal;
 }
+
+//Read saved colors from EEPROM and set the sides to those colors
+void setColorsFromEEPROM(){
+ topRGB[0] = EEPROM.read(topColorLoc);
+ topRGB[1] = EEPROM.read(topColorLoc+1);
+ topRGB[2] = EEPROM.read(topColorLoc+2);
+ //Set top pixels to color
+ for(int i=0; i<5; i++){
+   strip.setPixelColor(top[i], topRGB[0], topRGB[1], topRGB[2]);
+ }
+ ///TO-DO: Add other sides
+}
+
 
 //Rainbow animation
 void rainbow(uint8_t wait) {
