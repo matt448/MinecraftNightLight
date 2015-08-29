@@ -1,3 +1,15 @@
+///////////////////////////////////////////////
+// Minecraft BLE Night Light
+//
+//
+// Written by Matthew McMillan
+//            @matthewmcmillan
+//            https://matthewcmcmillan.blogspot.com
+//            https://github.com/matt448/MinecraftNightLight
+//
+// Most of the BLE code comes from Adafruit's nRF8001 examples
+
+
 /*********************************************************************
 This is an example for our nRF8001 Bluetooth Low Energy Breakout
 
@@ -68,11 +80,11 @@ Adafruit_BLE_UART BTLEserial = Adafruit_BLE_UART(ADAFRUITBLE_REQ, ADAFRUITBLE_RD
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(17, NEOPIN, NEO_GRB + NEO_KHZ800);
 
-/**************************************************************************/
-/*!
-    Configure the Arduino and start advertising with the radio
-*/
-/**************************************************************************/
+
+
+////////////////////////////////
+// SETUP
+////////////////////////////////
 void setup(void)
 { 
   Serial.begin(9600);
@@ -109,6 +121,12 @@ void setup(void)
 /**************************************************************************/
 aci_evt_opcode_t laststatus = ACI_EVT_DISCONNECTED;
 
+
+
+//////////////////////////////
+// MAIN LOOP
+//////////////////////////////
+
 void loop()
 {
   // Tell the nRF8001 to do whatever it should be working on.
@@ -141,7 +159,7 @@ void loop()
     while (BTLEserial.available()) {
       char c = BTLEserial.read();
       Serial.print(c);
-      if(c == 'C'){
+      if(c == 'C'){ //Set all sides to same color
         int red = BTLEserial.read();
         Serial.print(red);
         Serial.print(",");
@@ -156,25 +174,40 @@ void loop()
         }
         animation = 0;
         strip.show();
-      //Serial.print(c);
-      }else if(c == 'A'){
-        char anistyle = BTLEserial.read();
-	if(anistyle == 'R'){
-          Serial.println("Setting animation to rainbow");
-          animation = 1;
-	}else if(anistyle == 'P'){
-          Serial.println("Setting animation to pulse");
-	  animation = 2;
-	}else{
-          Serial.println("Setting animation to none");
-	  animation = 0;
-	}
+      }else if(c == 'A'){ //Enable animation
+         char anistyle = BTLEserial.read();
+	 if(anistyle == 'R'){
+           Serial.println(anistyle);
+           Serial.println("Setting animation to rainbow");
+           animation = 1;
+	 }else if(anistyle == 'P'){
+           Serial.println(anistyle);
+           Serial.println("Setting animation to pulse");
+	   animation = 2;
+	 }else{
+           Serial.println(anistyle);
+           Serial.println("Setting animation to none");
+	   animation = 0;
+	 }
+      }else if(c == 'W'){ //Commands to save EEPROM data
+        char saveEEPROMcmd = BTLEserial.read();
+        if(saveEEPROMcmd == 'n'){
+          Serial.println(saveEEPROMcmd);
+          Serial.println("Saving BLE name to EEPROM");
+          //add call to save function here
+        }else if(saveEEPROMcmd == 'c'){
+          Serial.println(saveEEPROMcmd);
+          Serial.println("Saving side colors to EEPROM");
+          //add call to save function here
+        }else{
+          Serial.println(saveEEPROMcmd);
+          Serial.println("Unknown EEPROM save command.");
+        }
       }
     }
     
 
     // Next up, see if we have any data to get from the Serial console
-
     if (Serial.available()) {
       // Read a line from Serial
       Serial.setTimeout(100); // 100 millisecond timeout
@@ -198,9 +231,8 @@ void loop()
 
 
 //////////////////////////////
-//
 //  FUNCTIONS
-//
+//////////////////////////////
 
 // Check EEPROM status byte. If it contains a 'v' EEPROM
 // has been initialized.
