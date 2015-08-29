@@ -278,14 +278,50 @@ int checkValidChar(char checkChar){
 
 //Read saved colors from EEPROM and set the sides to those colors
 void setColorsFromEEPROM(){
- topRGB[0] = EEPROM.read(topColorLoc);
- topRGB[1] = EEPROM.read(topColorLoc+1);
- topRGB[2] = EEPROM.read(topColorLoc+2);
- //Set top pixels to color
- for(int i=0; i<5; i++){
-   strip.setPixelColor(top[i], topRGB[0], topRGB[1], topRGB[2]);
- }
- ///TO-DO: Add other sides
+  //Read top colors from EEPROM
+  for(int i=0; i<3; i++){
+    topRGB[i] = EEPROM.read(topColorLoc+i);
+  }
+  //Set top pixels to color from EEPROM
+  for(int i=0; i<5; i++){
+    strip.setPixelColor(top[i], topRGB[0], topRGB[1], topRGB[2]);
+  }
+
+  //Read front colors from EEPROM
+  for(int i=0; i<3; i++){
+    frontRGB[i] = EEPROM.read(frontColorLoc+i);
+  }
+  //Set front pixels to color from EEPROM
+  for(int i=0; i<3; i++){
+    strip.setPixelColor(front[i], frontRGB[0], frontRGB[1], frontRGB[2]);
+  }
+
+  //Read back colors from EEPROM
+  for(int i=0; i<3; i++){
+    backRGB[i] = EEPROM.read(backColorLoc+i);
+  }
+  //Set back pixels to color from EEPROM
+  for(int i=0; i<3; i++){
+    strip.setPixelColor(back[i], backRGB[0], backRGB[1], backRGB[2]);
+  }
+
+  //Read right colors from EEPROM
+  for(int i=0; i<3; i++){
+    rightRGB[i] = EEPROM.read(rightColorLoc+i);
+  }
+  //Set right pixels to color from EEPROM
+  for(int i=0; i<3; i++){
+    strip.setPixelColor(right[i], rightRGB[0], rightRGB[1], rightRGB[2]);
+  }
+
+  //Read left colors from EEPROM
+  for(int i=0; i<3; i++){
+    leftRGB[i] = EEPROM.read(leftColorLoc+i);
+  }
+  //Set left pixels to color from EEPROM
+  for(int i=0; i<3; i++){
+    strip.setPixelColor(left[i], leftRGB[0], leftRGB[1], leftRGB[2]);
+  }
 }
 
 
