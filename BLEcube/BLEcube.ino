@@ -41,6 +41,8 @@ int left[3] = {14, 15, 16};
 //fullString allows rainbow animations to cycle in order based on cube sides
 int fullString[17] = {0, 1, 2, 3, 4, 5, 12, 13, 6, 7, 8, 9, 10, 11, 14, 15, 16};
 
+int numNeoPixels = 17;
+
 //Color arrays for sides
 int topRGB[3];
 int backRGB[3];
@@ -78,7 +80,7 @@ Adafruit_BLE_UART BTLEserial = Adafruit_BLE_UART(ADAFRUITBLE_REQ, ADAFRUITBLE_RD
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(17, NEOPIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(numNeoPixels, NEOPIN, NEO_GRB + NEO_KHZ800);
 
 
 
@@ -110,7 +112,8 @@ void setup(void)
   BTLEserial.begin();
   
   strip.begin(); //Begin Neopixels
-  setColorsFromEEPROM();
+  readColorsFromEEPROM();
+  setColorsFromMemory();
   strip.show();  //Initialize all pixels to 'off'
 }
 
@@ -169,11 +172,7 @@ void loop()
         int blue = BTLEserial.read();
         Serial.print(blue);
         Serial.print(" ");
-        for(int i=0; i < 17; i++){
-          strip.setPixelColor(i, red, green, blue);
-        }
-        animation = 0;
-        strip.show();
+        updateSolidColor(red, green, blue);
       }else if(c == 'A'){ //Enable animation
          char anistyle = BTLEserial.read();
 	 if(anistyle == 'R'){
@@ -190,31 +189,13 @@ void loop()
 	   animation = 0;
 	 }
       }else if(c == 'B'){ //Recieve new BLE Name
-        char currChar = BTLEserial.read(); //Read first character of the new name
-        int i=0;
-        Serial.println();
-        Serial.println("Receiving new BLE Name...");
-        while(checkValidChar(currChar) && i<7){ //BLE name can only be 7 characters. Already recvd one.
-          Serial.print("RECVD: ");
-          Serial.println(currChar);
-          bleName[i] = currChar; //push character onto bleName array
-          currChar = BTLEserial.read(); //Read next character of the new name
-          i++;
-        }
-        Serial.print("i finished at: ");
-        Serial.println(i);
-        for(i; i<8; i++){ //Blank out the rest of bleName array
-          bleName[i] = 0;
-        }
-        Serial.print("Finished receiving BLE Name: ");
-        Serial.println(bleName);
+        rxBLEname();
       }else if(c == 'W'){ //Commands to save EEPROM data
         char saveEEPROMcmd = BTLEserial.read();
         if(saveEEPROMcmd == 'n'){
           Serial.println(saveEEPROMcmd);
           Serial.println("Saving BLE name to EEPROM");
           writeBLEnameToEEPROM();
-          //add call to save function here
         }else if(saveEEPROMcmd == 'c'){
           Serial.println(saveEEPROMcmd);
           Serial.println("Saving side colors to EEPROM");
@@ -272,6 +253,7 @@ int checkEEPROMstatus(){
   return(returnVal);
 }
 
+
 // Place initial values in all the necessary EEPROM
 // memory locations
 void initEEPROM(){
@@ -293,6 +275,7 @@ void initEEPROM(){
   EEPROM.write(EEPROMstatusLoc, 'v');
 }
 
+
 //Read BLE name from EEPROM and put into char array
 void readBLEnameFromEEPROM(){
   //Loop through BLE Name EEPROM locations and read characters
@@ -308,9 +291,9 @@ void readBLEnameFromEEPROM(){
       Serial.print(currChar); Serial.println(" :Invalid");
       break;
     }
-    
   }
 }
+
 
 //Write BLE name stored in variable to EEPROM
 void writeBLEnameToEEPROM(){
@@ -326,7 +309,32 @@ void writeBLEnameToEEPROM(){
       break; //Break out of loop if we hit an invalid char.
     }
   }
+  flashColor(4, 0, 255, 0); //flash green to indicate successful save
 }
+
+
+void rxBLEname(){
+  char currChar = BTLEserial.read(); //Read first character of the new name
+  int i=0;
+  Serial.println();
+  Serial.println("Receiving new BLE Name...");
+  while(checkValidChar(currChar) && i<7){ //BLE name can only be 7 characters. Already recvd one.
+    Serial.print("RECVD: ");
+    Serial.println(currChar);
+    bleName[i] = currChar; //push character onto bleName array
+    currChar = BTLEserial.read(); //Read next character of the new name
+    i++;
+  }
+  Serial.print("i finished at: ");
+  Serial.println(i);
+  for(i; i<8; i++){ //Blank out the rest of bleName array
+    bleName[i] = 0;
+  }
+  Serial.print("Finished receiving BLE Name: ");
+  Serial.println(bleName);
+  flashColor(2, 0, 0, 255); //flash blue to indicate successful rx
+}
+
 
 //Check if passed character is valid for BLE name
 int checkValidChar(char checkChar){
@@ -340,52 +348,106 @@ int checkValidChar(char checkChar){
     return returnVal;
 }
 
-//Read saved colors from EEPROM and set the sides to those colors
-void setColorsFromEEPROM(){
+
+//Read saved colors from EEPROM and store them in color arrays
+void readColorsFromEEPROM(){
   //Read top colors from EEPROM
   for(int i=0; i<3; i++){
     topRGB[i] = EEPROM.read(topColorLoc+i);
   }
-  //Set top pixels to color from EEPROM
-  for(int i=0; i<5; i++){
-    strip.setPixelColor(top[i], topRGB[0], topRGB[1], topRGB[2]);
-  }
-
   //Read front colors from EEPROM
   for(int i=0; i<3; i++){
     frontRGB[i] = EEPROM.read(frontColorLoc+i);
+  }
+  //Read back colors from EEPROM
+  for(int i=0; i<3; i++){
+    backRGB[i] = EEPROM.read(backColorLoc+i);
+  }
+  //Read right colors from EEPROM
+  for(int i=0; i<3; i++){
+    rightRGB[i] = EEPROM.read(rightColorLoc+i);
+  }
+  //Read left colors from EEPROM
+  for(int i=0; i<3; i++){
+    leftRGB[i] = EEPROM.read(leftColorLoc+i);
+  }
+}
+
+
+//Set NeoPixels to colors stored in color arrays
+void setColorsFromMemory(){
+  //Set top pixels to color from EEPROM
+  for(int i=0; i<5; i++){
+    strip.setPixelColor(top[i], topRGB[0], topRGB[1], topRGB[2]);
   }
   //Set front pixels to color from EEPROM
   for(int i=0; i<3; i++){
     strip.setPixelColor(front[i], frontRGB[0], frontRGB[1], frontRGB[2]);
   }
-
-  //Read back colors from EEPROM
-  for(int i=0; i<3; i++){
-    backRGB[i] = EEPROM.read(backColorLoc+i);
-  }
   //Set back pixels to color from EEPROM
   for(int i=0; i<3; i++){
     strip.setPixelColor(back[i], backRGB[0], backRGB[1], backRGB[2]);
-  }
-
-  //Read right colors from EEPROM
-  for(int i=0; i<3; i++){
-    rightRGB[i] = EEPROM.read(rightColorLoc+i);
   }
   //Set right pixels to color from EEPROM
   for(int i=0; i<3; i++){
     strip.setPixelColor(right[i], rightRGB[0], rightRGB[1], rightRGB[2]);
   }
-
-  //Read left colors from EEPROM
-  for(int i=0; i<3; i++){
-    leftRGB[i] = EEPROM.read(leftColorLoc+i);
-  }
   //Set left pixels to color from EEPROM
   for(int i=0; i<3; i++){
     strip.setPixelColor(left[i], leftRGB[0], leftRGB[1], leftRGB[2]);
   }
+}
+
+
+//Set all the NeoPixels to a solid color
+void updateSolidColor(int red, int green, int blue){
+  //Set all the pixels to the same color
+  for(int i=0; i < numNeoPixels; i++){
+    strip.setPixelColor(i, red, green, blue);
+  }
+  //Hmmm need to do something different here. Some animations are ok
+  //for solid colors. (like pulse !AP)
+  animation = 0;
+  strip.show();
+  //Update color arrays with new values
+  topRGB[0] = red;
+  topRGB[1] = green;
+  topRGB[2] = blue;
+  backRGB[0] = red;
+  backRGB[1] = green;
+  backRGB[2] = blue;
+  frontRGB[0] = red;
+  frontRGB[1] = green;
+  frontRGB[2] = blue;
+  rightRGB[0] = red;
+  rightRGB[1] = green;
+  rightRGB[2] = blue;
+  leftRGB[0] = red;
+  leftRGB[1] = green;
+  leftRGB[2] = blue;
+}
+
+
+//Flash all NeoPixels a color and then set back to original colors.
+void flashColor(int numFlashes, int red, int green, int blue){
+  int origAnimation = animation;
+  animation = 0; //temporarily disable animations
+  for(int f=0; f<numFlashes; f++){
+    for(int i=0; i < numNeoPixels; i++){
+      strip.setPixelColor(i, red, green, blue);
+    }
+    strip.show();
+    delay(250);
+    for(int i=0; i < numNeoPixels; i++){
+      strip.setPixelColor(i, 0, 0, 0); //Set all to off
+    }
+    strip.show();
+    delay(250);
+  }
+  //Set everything back to original settings
+  setColorsFromMemory();
+  strip.show();
+  animation = origAnimation;
 }
 
 
@@ -401,6 +463,7 @@ void rainbow(uint8_t wait) {
   }
 }
 
+
 // Slightly different, this makes the rainbow equally distributed throughout
 void rainbowCycle(uint8_t wait) {
   uint16_t i, j;
@@ -412,6 +475,7 @@ void rainbowCycle(uint8_t wait) {
     delay(wait);
   }
 }
+
 
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
