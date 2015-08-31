@@ -189,11 +189,31 @@ void loop()
            Serial.println("Setting animation to none");
 	   animation = 0;
 	 }
+      }else if(c == 'B'){ //Recieve new BLE Name
+        char currChar = BTLEserial.read(); //Read first character of the new name
+        int i=0;
+        Serial.println();
+        Serial.println("Receiving new BLE Name...");
+        while(checkValidChar(currChar) && i<7){ //BLE name can only be 7 characters. Already recvd one.
+          Serial.print("RECVD: ");
+          Serial.println(currChar);
+          bleName[i] = currChar; //push character onto bleName array
+          currChar = BTLEserial.read(); //Read next character of the new name
+          i++;
+        }
+        Serial.print("i finished at: ");
+        Serial.println(i);
+        for(i; i<8; i++){ //Blank out the rest of bleName array
+          bleName[i] = 0;
+        }
+        Serial.print("Finished receiving BLE Name: ");
+        Serial.println(bleName);
       }else if(c == 'W'){ //Commands to save EEPROM data
         char saveEEPROMcmd = BTLEserial.read();
         if(saveEEPROMcmd == 'n'){
           Serial.println(saveEEPROMcmd);
           Serial.println("Saving BLE name to EEPROM");
+          writeBLEnameToEEPROM();
           //add call to save function here
         }else if(saveEEPROMcmd == 'c'){
           Serial.println(saveEEPROMcmd);
@@ -278,6 +298,7 @@ void readBLEnameFromEEPROM(){
   //Loop through BLE Name EEPROM locations and read characters
   //until an invalid character is reached. Once an invalid character
   //is reached the function exits.
+  Serial.println("Reading BLE Name from EEPROM");
   for(int i=0; i<8; i++){
     char currChar = EEPROM.read(bleNameLoc+i);
     if(checkValidChar(currChar)){
@@ -285,15 +306,26 @@ void readBLEnameFromEEPROM(){
       bleName[i] = currChar;
     }else{
       Serial.print(currChar); Serial.println(" :Invalid");
+      break;
     }
     
   }
 }
 
-///////TO-DO: Finish this function
+//Write BLE name stored in variable to EEPROM
 void writeBLEnameToEEPROM(){
-  //Write BLE name stored in variable to EEPROM
-  
+    //Loop through name stored in bleName array and verify
+    //it contains valid data before writting to EEPROM.
+    for(int i=0; i<8; i++){
+    char currChar = bleName[i];
+    if(checkValidChar(currChar)){
+      Serial.print(currChar); Serial.println(" :Valid");
+      EEPROM.write(bleNameLoc+i, currChar);
+    }else{
+      Serial.print(currChar); Serial.println(" :Invalid");
+      break; //Break out of loop if we hit an invalid char.
+    }
+  }
 }
 
 //Check if passed character is valid for BLE name
