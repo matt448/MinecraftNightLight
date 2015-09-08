@@ -114,7 +114,7 @@ void setup(void)
   strip.begin(); //Begin Neopixels
   readColorsFromEEPROM();
   setColorsFromMemory();
-  strip.show();  //Initialize all pixels to 'off'
+  strip.show();  //set the colors on the pixels
 }
 
 /**************************************************************************/
@@ -187,9 +187,24 @@ void loop()
            Serial.println(anistyle);
            Serial.println("Setting animation to none");
 	   animation = 0;
+           flashColor(2, 0, 255, 0); //flash green to indicate cmd rx
 	 }
       }else if(c == 'B'){ //Recieve new BLE Name
         rxBLEname();
+      }else if(c == 'S'){ //Set one side to new color
+        char cubeSide = BTLEserial.read();
+        Serial.print(cubeSide);
+        Serial.print(",");
+        int red = BTLEserial.read();
+        Serial.print(red);
+        Serial.print(",");
+        int green = BTLEserial.read();
+        Serial.print(green);
+        Serial.print(",");
+        int blue = BTLEserial.read();
+        Serial.print(blue);
+        Serial.print(" ");
+        updateSideColor(cubeSide, red, green, blue);
       }else if(c == 'W'){ //Commands to save EEPROM data
         char saveEEPROMcmd = BTLEserial.read();
         if(saveEEPROMcmd == 'n'){
@@ -409,7 +424,7 @@ void updateSolidColor(int red, int green, int blue){
   //for solid colors. (like pulse !AP)
   animation = 0;
   strip.show();
-  //Update color arrays with new values
+  //Update color arrays with new values in case we save to eeprom
   topRGB[0] = red;
   topRGB[1] = green;
   topRGB[2] = blue;
@@ -425,6 +440,58 @@ void updateSolidColor(int red, int green, int blue){
   leftRGB[0] = red;
   leftRGB[1] = green;
   leftRGB[2] = blue;
+}
+
+
+//Set one side to a new color
+void updateSideColor(char cubeSide, int red, int green, int blue){
+  if(cubeSide == 't'){
+    //Update color array with new values in case we save to eeprom
+    topRGB[0] = red;
+    topRGB[1] = green;
+    topRGB[2] = blue;
+    //Set the top to new color
+    for(int i=0; i < 5; i++){
+      strip.setPixelColor(top[i], red, green, blue);
+    }
+  }else if(cubeSide == 'f'){
+    //Update color array with new values in case we save to eeprom
+    frontRGB[0] = red;
+    frontRGB[1] = green;
+    frontRGB[2] = blue;
+    //Set the front to new color
+    for(int i=0; i < 3; i++){
+      strip.setPixelColor(front[i], red, green, blue);
+    }
+  }else if(cubeSide == 'r'){
+    //Update color array with new values in case we save to eeprom
+    rightRGB[0] = red;
+    rightRGB[1] = green;
+    rightRGB[2] = blue;
+    //Set the right to new color
+    for(int i=0; i < 3; i++){
+      strip.setPixelColor(right[i], red, green, blue);
+    }
+  }else if(cubeSide == 'l'){
+    //Update color array with new values in case we save to eeprom
+    leftRGB[0] = red;
+    leftRGB[1] = green;
+    leftRGB[2] = blue;
+    //Set the left to new color
+    for(int i=0; i < 3; i++){
+      strip.setPixelColor(left[i], red, green, blue);
+    }
+  }else if(cubeSide == 'b'){
+    //Update color array with new values in case we save to eeprom
+    backRGB[0] = red;
+    backRGB[1] = green;
+    backRGB[2] = blue;
+    //Set the back to new color
+    for(int i=0; i < 3; i++){
+      strip.setPixelColor(back[i], red, green, blue);
+    }
+  }
+  strip.show(); //Display the color change
 }
 
 
@@ -467,7 +534,7 @@ void rainbow(uint8_t wait) {
 // Slightly different, this makes the rainbow equally distributed throughout
 void rainbowCycle(uint8_t wait) {
   uint16_t i, j;
-  for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
+  for(j=0; j<256; j++) { // 1 cycle of all colors on wheel
     for(i=0; i< strip.numPixels(); i++) {
       strip.setPixelColor(fullString[i], Wheel(((i * 256 / strip.numPixels()) + j) & 255));
     }
