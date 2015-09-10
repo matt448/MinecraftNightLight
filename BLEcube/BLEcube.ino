@@ -114,7 +114,6 @@ void setup(void)
   strip.begin(); //Begin Neopixels
   readColorsFromEEPROM();
   setColorsFromMemory();
-  strip.show();  //set the colors on the pixels
 }
 
 /**************************************************************************/
@@ -188,6 +187,7 @@ void loop()
            Serial.println("Setting animation to none");
 	   animation = 0;
            flashColor(2, 0, 255, 0); //flash green to indicate cmd rx
+           setColorsFromMemory();
 	 }
       }else if(c == 'B'){ //Recieve new BLE Name
         rxBLEname();
@@ -242,6 +242,8 @@ void loop()
   }
   if(animation == 1){
     rainbowCycle(10);
+  }else if(animation == 2){
+    pulseColors(50);
   }
 }
 
@@ -441,6 +443,7 @@ void setColorsFromMemory(){
   for(int i=0; i<3; i++){
     strip.setPixelColor(left[i], leftRGB[0], leftRGB[1], leftRGB[2]);
   }
+  strip.show();  //set the colors on the pixels
 }
 
 
@@ -545,6 +548,46 @@ void flashColor(int numFlashes, int red, int green, int blue){
   setColorsFromMemory();
   strip.show();
   animation = origAnimation;
+}
+
+
+void dimColors(int dimPercent) {
+  //100% is fully on and 0% is fully off
+  float dimVal = float(dimPercent)/100;
+  //Set top pixels to dimVal
+  for(int i=0; i<5; i++){
+    strip.setPixelColor(top[i], topRGB[0]*dimVal, topRGB[1]*dimVal, topRGB[2]*dimVal);
+  }
+  //Set front pixels to dimVal
+  for(int i=0; i<3; i++){
+    strip.setPixelColor(front[i], frontRGB[0]*dimVal, frontRGB[1]*dimVal, frontRGB[2]*dimVal);
+  }
+  //Set back pixels to dimVal
+  for(int i=0; i<3; i++){
+    strip.setPixelColor(back[i], backRGB[0]*dimVal, backRGB[1]*dimVal, backRGB[2]*dimVal);
+  }
+  //Set right pixels to dimVal
+  for(int i=0; i<3; i++){
+    strip.setPixelColor(right[i], rightRGB[0]*dimVal, rightRGB[1]*dimVal, rightRGB[2]*dimVal);
+  }
+  //Set left pixels to dimVal
+  for(int i=0; i<3; i++){
+    strip.setPixelColor(left[i], leftRGB[0]*dimVal, leftRGB[1]*dimVal, leftRGB[2]*dimVal);
+  }
+  strip.show();  //set the colors on the pixels
+}
+
+
+void pulseColors(uint8_t wait) {
+  //100% is fully on and 0% is fully off
+  for(int d=99; d > 1; d--){
+    dimColors(d);
+    delay(wait);
+  }
+  for(int d=0; d < 101; d++){
+    dimColors(d);
+    delay(wait);
+  }
 }
 
 
