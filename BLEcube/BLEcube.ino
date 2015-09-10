@@ -62,6 +62,7 @@ int bleNameLoc = 22; //7 bytes
 char validChars[37] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 char bleName[8];
 int animation = 0; //1=rainbow,2=pulse
+int pulseWaitms = 50; //Number of milliseconds to wait between brightness steps
 
 // Connect CLK/MISO/MOSI to hardware SPI for BLE
 // e.g. On UNO & compatible: CLK = 13, MISO = 12, MOSI = 11
@@ -243,7 +244,7 @@ void loop()
   if(animation == 1){
     rainbowCycle(10);
   }else if(animation == 2){
-    pulseColors(50);
+    pulseColors(pulseWaitms);
   }
 }
 
@@ -582,11 +583,22 @@ void pulseColors(uint8_t wait) {
   //100% is fully on and 0% is fully off
   for(int d=99; d > 1; d--){
     dimColors(d);
-    delay(wait);
+    //Visually the cube was staying bright longer than it was dimming.
+    //This speeds up the wait between steps at brighter levels
+    if(d > 50){
+      delay(wait/2);
+    }else{
+      delay(wait);
+    }
   }
+  delay(wait); //wait one more time before lighting it back up
   for(int d=0; d < 101; d++){
     dimColors(d);
-    delay(wait);
+    if(d > 50){
+      delay(wait/2);
+    }else{
+      delay(wait);
+    }
   }
 }
 
