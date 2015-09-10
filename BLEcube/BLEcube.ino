@@ -214,7 +214,7 @@ void loop()
         }else if(saveEEPROMcmd == 'c'){
           Serial.println(saveEEPROMcmd);
           Serial.println("Saving side colors to EEPROM");
-          //add call to save function here
+          writeColorsToEEPROM();
         }else{
           Serial.println(saveEEPROMcmd);
           Serial.println("Unknown EEPROM save command.");
@@ -328,6 +328,7 @@ void writeBLEnameToEEPROM(){
 }
 
 
+//Receive new BLE Name over BLE UART
 void rxBLEname(){
   char currChar = BTLEserial.read(); //Read first character of the new name
   int i=0;
@@ -386,6 +387,35 @@ void readColorsFromEEPROM(){
   for(int i=0; i<3; i++){
     leftRGB[i] = EEPROM.read(leftColorLoc+i);
   }
+  animation = EEPROM.read(animationLoc);
+}
+
+
+//Save colors and animation to EEPROM
+void writeColorsToEEPROM(){
+  //Write top colors to EEPROM
+  for(int i=0; i<3; i++){
+     EEPROM.write(topColorLoc+i, topRGB[i]);
+  }
+  //Write front colors to EEPROM
+  for(int i=0; i<3; i++){
+     EEPROM.write(frontColorLoc+i, frontRGB[i]);
+  }
+  //Write back colors to EEPROM
+  for(int i=0; i<3; i++){
+     EEPROM.write(backColorLoc+i, backRGB[i]);
+  }
+  //Write right colors to EEPROM
+  for(int i=0; i<3; i++){
+     EEPROM.write(rightColorLoc+i, rightRGB[i]);
+  }
+  //Write left colors to EEPROM
+  for(int i=0; i<3; i++){
+     EEPROM.write(leftColorLoc+i, leftRGB[i]);
+  }
+  //Write animation style to EEPROM
+  EEPROM.write(animationLoc, animation);
+  flashColor(2, 0, 255, 0); //flash green to indicate save complete
 }
 
 
