@@ -585,7 +585,9 @@ void pulseColors(uint8_t wait) {
     dimColors(d);
     //Visually the cube was staying bright longer than it was dimming.
     //This speeds up the wait between steps at brighter levels
-    if(d > 50){
+    if(d > 75){
+      delay(wait/3);
+    }else if(d > 50 && d <= 75){
       delay(wait/2);
     }else{
       delay(wait);
@@ -594,7 +596,9 @@ void pulseColors(uint8_t wait) {
   delay(wait); //wait one more time before lighting it back up
   for(int d=0; d < 101; d++){
     dimColors(d);
-    if(d > 50){
+    if(d > 75){
+      delay(wait/3);
+    }else if(d > 50 && d <= 75){
       delay(wait/2);
     }else{
       delay(wait);
