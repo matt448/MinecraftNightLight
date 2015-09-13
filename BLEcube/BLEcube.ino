@@ -61,8 +61,9 @@ int animationLoc = 21; //1 byte
 int bleNameLoc = 22; //7 bytes
 char validChars[37] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 char bleName[8];
-int animation = 0; //1=rainbow,2=pulse
+int animation = 0; //0=none,1=rainbow,2=pulse,3=cycle sides
 int pulseWaitms = 50; //Number of milliseconds to wait between brightness steps
+int cycleWaitms = 200; //Number of milliseconds to wait between move colors to next side
 
 // Connect CLK/MISO/MOSI to hardware SPI for BLE
 // e.g. On UNO & compatible: CLK = 13, MISO = 12, MOSI = 11
@@ -179,10 +180,14 @@ void loop()
            Serial.println(anistyle);
            Serial.println("Setting animation to rainbow");
            animation = 1;
-	 }else if(anistyle == 'P'){
+	 }else if(anistyle == 'P'){ //Pulse animation
            Serial.println(anistyle);
            Serial.println("Setting animation to pulse");
 	   animation = 2;
+         }else if(anistyle == 'C'){ //Cycle colors animation
+           Serial.println(anistyle);
+           Serial.println("Setting animation to cycle");
+           animation = 3;
 	 }else{
            Serial.println(anistyle);
            Serial.println("Setting animation to none");
@@ -245,6 +250,8 @@ void loop()
     rainbowCycle(10);
   }else if(animation == 2){
     pulseColors(pulseWaitms);
+  }else if(animation == 3){
+    cycleColors(cycleWaitms);
   }
 }
 
@@ -552,6 +559,8 @@ void flashColor(int numFlashes, int red, int green, int blue){
 }
 
 
+//This sets all the pixels to a certain brightness based on percent.
+//The in memory RGB value is divided by the percent passed in and set on the pixel.
 void dimColors(int dimPercent) {
   //100% is fully on and 0% is fully off
   float dimVal = float(dimPercent)/100;
@@ -579,6 +588,8 @@ void dimColors(int dimPercent) {
 }
 
 
+//Make all pixels dim 1% per step until they are off and then
+//brighten them again until they are back to the starting values.
 void pulseColors(uint8_t wait) {
   //100% is fully on and 0% is fully off
   for(int d=99; d > 1; d--){
@@ -604,6 +615,50 @@ void pulseColors(uint8_t wait) {
       delay(wait);
     }
   }
+}
+
+
+void cycleColors(uint8_t wait) {
+                     // front,    right,    back,     left
+  int fourSides[12] = {6, 7, 8, 9, 10, 11, 0, 1, 2, 14, 15, 16};
+
+  int seq1[12] = {leftRGB[0], leftRGB[1], leftRGB[2], frontRGB[0], frontRGB[1], frontRGB[2], rightRGB[0], rightRGB[1], rightRGB[2], backRGB[0], backRGB[1], backRGB[2]};
+  int seq2[12] = {backRGB[0], backRGB[1], backRGB[2], leftRGB[0], leftRGB[1], leftRGB[2], frontRGB[0], frontRGB[1], frontRGB[2], rightRGB[0], rightRGB[1], rightRGB[2]};
+  int seq3[12] = {rightRGB[0], rightRGB[1], rightRGB[2], backRGB[0], backRGB[1], backRGB[2], leftRGB[0], leftRGB[1], leftRGB[2], frontRGB[0], frontRGB[1], frontRGB[2]};
+  int seq4[12] = {frontRGB[0], frontRGB[1], frontRGB[2], rightRGB[0], rightRGB[1], rightRGB[2], backRGB[0], backRGB[1], backRGB[2], leftRGB[0], leftRGB[1], leftRGB[2]};
+
+
+  for(int i=0; i<12; i+=3){
+    strip.setPixelColor(fourSides[0+i], seq1[0+i], seq1[1+i], seq1[2+i]);
+    strip.setPixelColor(fourSides[1+i], seq1[0+i], seq1[1+i], seq1[2+i]);
+    strip.setPixelColor(fourSides[2+i], seq1[0+i], seq1[1+i], seq1[2+i]);
+  }
+  strip.show();
+  delay(wait);
+
+  for(int i=0; i<12; i+=3){
+    strip.setPixelColor(fourSides[0+i], seq2[0+i], seq2[1+i], seq2[2+i]);
+    strip.setPixelColor(fourSides[1+i], seq2[0+i], seq2[1+i], seq2[2+i]);
+    strip.setPixelColor(fourSides[2+i], seq2[0+i], seq2[1+i], seq2[2+i]);
+  }
+  strip.show();
+  delay(wait);
+
+  for(int i=0; i<12; i+=3){
+    strip.setPixelColor(fourSides[0+i], seq3[0+i], seq3[1+i], seq3[2+i]);
+    strip.setPixelColor(fourSides[1+i], seq3[0+i], seq3[1+i], seq3[2+i]);
+    strip.setPixelColor(fourSides[2+i], seq3[0+i], seq3[1+i], seq3[2+i]);
+  }
+  strip.show();
+  delay(wait);
+
+  for(int i=0; i<12; i+=3){
+    strip.setPixelColor(fourSides[0+i], seq4[0+i], seq4[1+i], seq4[2+i]);
+    strip.setPixelColor(fourSides[1+i], seq4[0+i], seq4[1+i], seq4[2+i]);
+    strip.setPixelColor(fourSides[2+i], seq4[0+i], seq4[1+i], seq4[2+i]);
+  }
+  strip.show();
+  delay(wait);
 }
 
 
